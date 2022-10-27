@@ -1,7 +1,7 @@
 import React, { Fragment, useEffect, useState } from "react";
 
 import { Icon } from "@iconify/react";
-import { Button, Stack } from "@mantine/core";
+import { clsx, Divider, Group, Stack, UnstyledButton } from "@mantine/core";
 
 const SWITCH_OFF = <Icon icon="line-md:switch-to-switch-off-transition" />;
 const SWITCH_ON = <Icon icon="line-md:switch-off-to-switch-transition" />;
@@ -50,26 +50,22 @@ const MENU: Array<
 ];
 
 export default function App() {
-  // useEffect(() => {
-  //   if (
-  //     localStorage.theme === "dark" ||
-  //     (!("theme" in localStorage) &&
-  //       window.matchMedia("(prefers-color-scheme: dark)").matches)
-  //   ) {
-  //     document.documentElement.classList.add("dark");
-  //   } else {
-  //     document.documentElement.classList.remove("dark");
-  //   }
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem("theme") ??
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light"
+  );
+  
+  useEffect(() => {
+    localStorage.setItem("theme", theme);
 
-  //   // Whenever the user explicitly chooses light mode
-  //   localStorage.theme = "light";
-
-  //   // Whenever the user explicitly chooses dark mode
-  //   localStorage.theme = "dark";
-
-  //   // Whenever the user explicitly chooses to respect the OS preference
-  //   localStorage.removeItem("theme");
-  // }, [])
+    if (localStorage.theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [theme]);
 
   const [subMenu, setSubMenu] = useState(
     Object.fromEntries(
@@ -80,50 +76,64 @@ export default function App() {
   );
 
   return (
-    <Stack>
-      {MENU.map(({ label, icon, children }, idx) => (
-        <Fragment key={idx}>
-          <Button
-            rightIcon={
-              children ? (
-                subMenu[label] ? (
-                  <Icon icon="bx:caret-up" />
-                ) : (
-                  <Icon icon="bx:caret-down" />
-                )
-              ) : null
-            }
-            onClick={
-              children
-                ? () => {
-                    setSubMenu({ ...subMenu, [label]: !subMenu[label] });
-                  }
-                : undefined
-            }
-            classNames={{
-              inner: "justify-start",
-            }}
-            className="text-periwinkle"
-            leftIcon={<Icon icon={icon} />}
-          >
-            {label}
-          </Button>
+    <nav>
+      <section>
+        <menu>
+          {MENU.map(({ label, icon, children }, idx) => {
+            const visible = subMenu[label];
 
-          {children && subMenu[label]
-            ? children.map((item, idx) => (
-                <Button
-                  key={idx}
-                  classNames={{
-                    inner: "justify-start",
-                  }}
-                  className="text-periwinkle"
+            return (
+              <Fragment key={idx}>
+                <UnstyledButton
+                  onClick={
+                    children
+                      ? () => {
+                          setSubMenu({ ...subMenu, [label]: !visible });
+                        }
+                      : undefined
+                  }
+                  className={clsx(
+                    "flex justify-between",
+                    visible ? "text-light-turquoise" : "text-periwinkle"
+                  )}
                 >
-                  {item}
-                </Button>
-              ))
-            : null}
-        </Fragment>
-      ))}
-    </Stack>
+                  <Group spacing="xs">
+                    <Icon icon={icon} />
+                    <span>{label}</span>
+                  </Group>
+
+                  {children ? (
+                    <Icon icon={visible ? "bx:caret-up" : "bx:caret-down"} />
+                  ) : null}
+                </UnstyledButton>
+
+                {children && visible
+                  ? children.map((item, idx) => (
+                      <UnstyledButton
+                        key={idx}
+                        className="pl-6 text-periwinkle"
+                      >
+                        {item}
+                      </UnstyledButton>
+                    ))
+                  : null}
+              </Fragment>
+            );
+          })}
+        </menu>
+        <Divider />
+
+        <UnstyledButton
+          onClick={() => {
+            localStorage.getItem("theme") === "dark"
+              ? setTheme("light")
+              : setTheme("dark");
+          }}
+        >
+          {/* <Icon icon={icon} /> */}
+          <span>Dark theme</span>
+        </UnstyledButton>
+      </section>
+    </nav>
   );
 }
