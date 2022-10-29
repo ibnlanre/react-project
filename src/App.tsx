@@ -1,10 +1,15 @@
 import React, { Fragment, useEffect, useState } from "react";
 
 import { Icon } from "@iconify/react";
-import { clsx, Divider, Group, Stack, UnstyledButton } from "@mantine/core";
+import { clsx, Divider, UnstyledButton } from "@mantine/core";
 
-const SWITCH_OFF = <Icon icon="line-md:switch-to-switch-off-transition" />;
-const SWITCH_ON = <Icon icon="line-md:switch-off-to-switch-transition" />;
+const ICONIFY = {
+  SWITCH_OFF: "mdi:toggle-switch-off-outline",
+  SWITCH_ON: "mdi:toggle-switch-outline",
+
+  COLLAPSED: "ri:menu-unfold-line",
+  UNCOLLAPSED: "ri:menu-fold-line",
+};
 
 const MENU: Array<
   {
@@ -50,17 +55,18 @@ const MENU: Array<
 ];
 
 export default function App() {
-  const [theme, setTheme] = useState(
-    () => localStorage.getItem("theme") ??
-      window.matchMedia("(prefers-color-scheme: dark)").matches
+  const [theme, setTheme] = useState(() =>
+    localStorage.getItem("theme") ??
+    window.matchMedia("(prefers-color-scheme: dark)").matches
       ? "dark"
       : "light"
   );
-  
+  const [collapsed, setCollapsed] = useState(false);
+
   useEffect(() => {
     localStorage.setItem("theme", theme);
 
-    if (localStorage.theme === "dark") {
+    if (localStorage.getItem("theme") === "dark") {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
@@ -76,9 +82,14 @@ export default function App() {
   );
 
   return (
-    <nav>
-      <section>
-        <menu>
+    <nav
+      className={clsx(
+        "flex flex-col justify-between h-full max-w-xs p-6 dark:bg-light-arsenic",
+        { "w-max": collapsed }
+      )}
+    >
+      <section className="flex flex-col gap-11">
+        <menu className="flex flex-col gap-6">
           {MENU.map(({ label, icon, children }, idx) => {
             const visible = subMenu[label];
 
@@ -93,47 +104,68 @@ export default function App() {
                       : undefined
                   }
                   className={clsx(
-                    "flex justify-between",
-                    visible ? "text-light-turquoise" : "text-periwinkle"
+                    "flex gap-4 my-3 h-5",
+                    visible
+                      ? "text-light-turquoise dark:text-dark-celeste"
+                      : "text-periwinkle dark:text-white"
                   )}
                 >
-                  <Group spacing="xs">
-                    <Icon icon={icon} />
-                    <span>{label}</span>
-                  </Group>
+                  <Icon icon={icon} />
+                  {collapsed ? null : (
+                    <label className="flex justify-between flex-1 cursor-pointer">
+                      <span>{label}</span>
 
-                  {children ? (
-                    <Icon icon={visible ? "bx:caret-up" : "bx:caret-down"} />
-                  ) : null}
+                      {children ? (
+                        <Icon
+                          icon={visible ? "bx:caret-up" : "bx:caret-down"}
+                        />
+                      ) : null}
+                    </label>
+                  )}
                 </UnstyledButton>
 
-                {children && visible
-                  ? children.map((item, idx) => (
+                {children && visible ? (
+                  <menu className="grid gap-6 pl-8">
+                    {children.map((item, idx) => (
                       <UnstyledButton
                         key={idx}
-                        className="pl-6 text-periwinkle"
+                        className="h-5 my-3 text-periwinkle dark:text-white"
                       >
                         {item}
                       </UnstyledButton>
-                    ))
-                  : null}
+                    ))}
+                  </menu>
+                ) : null}
               </Fragment>
             );
           })}
         </menu>
+
         <Divider />
 
         <UnstyledButton
+          className="flex gap-4 text-periwinkle dark:text-white"
           onClick={() => {
-            localStorage.getItem("theme") === "dark"
-              ? setTheme("light")
-              : setTheme("dark");
+            theme === "dark" ? setTheme("light") : setTheme("dark");
           }}
         >
-          {/* <Icon icon={icon} /> */}
-          <span>Dark theme</span>
+          <Icon
+            icon={theme === "dark" ? ICONIFY.SWITCH_ON : ICONIFY.SWITCH_OFF}
+          />
+          {collapsed ? null : <span>Dark theme</span>}
         </UnstyledButton>
       </section>
+
+      <UnstyledButton
+        className={clsx(
+          collapsed ? "text-light-turquoise" : "text-periwinkle",
+          "flex h-5 gap-4 dark:text-white",
+        )}
+        onClick={() => setCollapsed((e) => !e)}
+      >
+        <Icon icon={collapsed ? ICONIFY.COLLAPSED : ICONIFY.UNCOLLAPSED} />
+        {collapsed ? null : <span>Collapse panel</span>}
+      </UnstyledButton>
     </nav>
   );
 }
